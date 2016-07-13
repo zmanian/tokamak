@@ -1,9 +1,11 @@
+# Views
 TokamakView = require './tokamak-view'
 CargoView = require './cargo-view'
 RustUpToolchainView = require './rustup-toolchain-view'
 CreateProjectView = require './create-project-view'
 AboutView = require './about-view'
 
+# Helpers
 Utils = require './utils'
 
 {consumeRunInTerminal} = require './terminal'
@@ -93,17 +95,22 @@ module.exports = Tokamak =
     # Events subscribed to in atom's system can be easily cleaned up with a CompositeDisposable
     @subscriptions = new CompositeDisposable
 
-    # Register command that toggles this view
+    # Register general commands
     @subscriptions.add atom.commands.add 'atom-workspace',
       'tokamak:detect-binaries': => Utils.detectBinaries()
       'tokamak:settings': => atom.workspace.open('atom://config/packages/tokamak/')
-      'tokamak:run': => Utils.openTerminal(atom.config.get("tokamak.cargoBinPath") + ' run')
-      'tokamak:test': => Utils.openTerminal(atom.config.get("tokamak.cargoBinPath") + ' test')
+      'tokamak:run': =>
+        Utils.savePaneItems()
+        Utils.openTerminal(atom.config.get("tokamak.cargoBinPath") + ' run')
+      'tokamak:test': =>
+        Utils.savePaneItems()
+        Utils.openTerminal(atom.config.get("tokamak.cargoBinPath") + ' test')
+      'tokamak:toggle-toolbar': =>
+        editor = atom.workspace.getActiveTextEditor()
+        atom.commands.dispatch(atom.views.getView(editor), "tool-bar:toggle")
 
   consumeToolBar: (toolBar) ->
     @toolBar = toolBar 'tokamak'
-
-    @toolBar.addSpacer()
 
     @toolBar.addButton
       icon: 'package'
@@ -113,27 +120,32 @@ module.exports = Tokamak =
     @toolBar.addSpacer()
 
     @toolBar.addButton
-      icon: 'ion ion-hammer'
+      icon: 'hammer'
+      iconset: 'ion'
       callback: 'tokamak:build'
       tooltip: 'Build'
 
     @toolBar.addButton
-      icon: 'fi fi-x'
+      icon: 'x'
+      iconset: 'fi'
       callback: 'tokamak:clean'
       tooltip: 'Clean'
 
     @toolBar.addButton
-      icon: 'ion ion-refresh'
+      icon: 'refresh'
+      iconset: 'ion'
       callback: 'tokamak:rebuild'
       tooltip: 'Rebuild'
 
     @toolBar.addButton
-      icon: 'ion ion-play'
+      icon: 'play'
+      iconset: 'ion'
       callback: 'tokamak:run'
       tooltip: 'Cargo Run'
 
     @toolBar.addButton
-      icon: 'fi fi-check'
+      icon: 'check'
+      iconset: 'fi'
       callback: 'tokamak:test'
       tooltip: 'Cargo Test'
 
@@ -160,11 +172,10 @@ module.exports = Tokamak =
       tooltip: 'Settings'
 
     @toolBar.addButton
-      icon: 'ion ion-nuclear'
+      icon: 'nuclear'
+      iconset: 'ion'
       callback: 'tokamak:about'
       tooltip: 'About Tokamak'
-
-    @toolBar.addSpacer()
 
     @toolBar.onDidDestroy ->
       @toolBar = null

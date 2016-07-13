@@ -30,23 +30,23 @@ class Utils
           atom.notifications.addSuccess("Tokamak: Dependencies are installed!");
 
   @detectBinaries: ->
-    for pkg in ["cargo", "racer", "rustup", "rustc"]
-      console.log(pkg)
-      data = @runCommandOut("which", [pkg])
-      console.log(data)
-      if data.status == 0 && data.stdoutData.length >= 0
+    for pkg in ["cargo", "racer", "multirust", "rustc","rustup"]
+      data = @findBinary([pkg])
+      if data.status == 0 && data.stdoutData.length > 0
         switch pkg
           when "cargo"
-            atom.config.set("tokamak.cargoBinPath", data.stdoutData.replace(/^\s+|\s+$/g, ""))
-            atom.config.set("linter-rust.cargoPath", data.stdoutData.replace(/^\s+|\s+$/g, ""))
+            atom.config.set("tokamak.cargoBinPath", data.stdoutData)
+            atom.config.set("linter-rust.cargoPath", data.stdoutData)
           when "racer"
-            atom.config.set("tokamak.racerBinPath", data.stdoutData.replace(/^\s+|\s+$/g, ""))
-            atom.config.set("racer.racerBinPath", data.stdoutData.replace(/^\s+|\s+$/g, ""))
+            atom.config.set("tokamak.racerBinPath", data.stdoutData)
+            atom.config.set("racer.racerBinPath", data.stdoutData)
           when "rustup"
-            atom.config.set("tokamak.rustupBinPath", data.stdoutData.replace(/^\s+|\s+$/g, ""))
+            atom.config.set("tokamak.rustupBinPath", data.stdoutData)
+          when "multirust"
+            atom.config.set("tokamak.multirustBinPath", data.stdoutData)
           when "rustc"
-            atom.config.set("tokamak.rustcBinPath", data.stdoutData.replace(/^\s+|\s+$/g, ""))
-            atom.config.set("linter-rust.rustcPath", data.stdoutData.replace(/^\s+|\s+$/g, ""))
+            atom.config.set("tokamak.rustcBinPath", data.stdoutData)
+            atom.config.set("linter-rust.rustcPath", data.stdoutData)
       else
         atom.notifications.addError("Tokamak: #{pkg} is not installed or not found in PATH",
         {
@@ -56,6 +56,17 @@ class Utils
           ERROR: #{data.stderrData}"
           dismissable: true
         })
+
+  @findBinary: (pkg) ->
+    if process.platform is "win32"
+      return @runCommandOut("where", [pkg]);
+    else
+      data = @runCommandOut("which", [pkg]);
+
+      if data.status == 0 && data.stdoutData.length >= 0
+        data.stdoutData = data.stdoutData.replace(/^\s+|\s+$/g, "")
+
+      return data
 
   @watchConfig: ->
     atom.config.onDidChange "tokamak.autocompleteBlacklist", ({newValue, oldValue}) ->
@@ -81,3 +92,6 @@ class Utils
         dismissable: true,
       });
     status
+
+  @savePaneItems: ->
+    atom.workspace.getPaneItems().map (item) -> if item.save? then item.save()
